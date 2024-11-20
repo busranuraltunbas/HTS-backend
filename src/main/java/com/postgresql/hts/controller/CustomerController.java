@@ -4,6 +4,7 @@ import com.postgresql.hts.model.Customer;
 import com.postgresql.hts.repository.CustomerRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -57,6 +58,15 @@ public class CustomerController{
 
         customerRepo.save(updateCustomer);
         return ResponseEntity.ok(updateCustomer);
+    }
+
+    //build delete customer REST API
+    @DeleteMapping("/customer/{id}")
+    public ResponseEntity<HttpStatus> deleteCustomer(@PathVariable Long id){
+        Customer customer = customerRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not exist with id" + id));
+        customerRepo.delete(customer);
+        return  new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
 }
