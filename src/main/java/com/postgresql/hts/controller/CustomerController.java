@@ -30,6 +30,8 @@ public class CustomerController{
     // build create customer REST API
     @PostMapping("/createCustomer")
     public Customer createCustomer(@RequestBody Customer customer){
+        //customer.setState(true);
+        //customer.setCreatedDate(new Date());
         return customerRepo.save(customer);
     }
 
