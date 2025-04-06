@@ -32,11 +32,11 @@ public class HtsApplication implements CommandLineRunner {
 //		userRepo.save(user);
 
 
-		Animal animal = new Animal();
-		animal.setEarningNumber("58");
-		animal.setAge("65");
-		animal.setCutNumber("95");
-		animalRepo.save(animal);
+		/*Animal animal = new Animal();
+		animal.setEarningNumber("5");
+		animal.setAge("6");
+		animal.setCutNumber("9");
+		animalRepo.save(animal);*/
 
 	}
 }
