@@ -13,28 +13,28 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
-@CrossOrigin("*")
 @RestController
-//@RequestMapping("/animals")
+@RequestMapping("/animals")
+@CrossOrigin("*")
 public class AnimalController {
     @Autowired
-    AnimalRepo animalRepo;
+    private  AnimalRepo animalRepo;
 
     // build create animal REST API
-    @PostMapping("/createAnimal")
+    @PostMapping
     public Animal createAnimal(@RequestBody Animal animal){
         //animal.setState(true);
         //animal.setCreatedDate(new Date());
         return animalRepo.save(animal);
     }
 
-    @GetMapping("/animals")
+    @GetMapping
     public List<Animal> getAllAnimals(){
         return animalRepo.findAll();
     }
 
     //build get animal by id REST API
-    @GetMapping("/animal/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<Animal> getAnimalById(@PathVariable Long id){
         Animal animal = animalRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Animal not exist with id" + id));
@@ -42,7 +42,7 @@ public class AnimalController {
     }
 
     //build update animal REST API
-    @PutMapping("/animal/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<Animal> updateAnimal(@PathVariable Long id, @RequestBody Animal animalDetails){
         Animal updateAnimal =  animalRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Animal not exist with id" + id));
@@ -52,12 +52,17 @@ public class AnimalController {
         updateAnimal.setEarningNumber(animalDetails.getEarningNumber());
         updateAnimal.setPrice(animalDetails.getPrice());
 
+        updateAnimal.setType(animalDetails.getType());
+        updateAnimal.setWeight(animalDetails.getWeight());
+        updateAnimal.setShare(animalDetails.getShare());
+        updateAnimal.setIsSale(animalDetails.getIsSale()); // boolean field
+
         animalRepo.save(updateAnimal);
         return ResponseEntity.ok(updateAnimal);
     }
 
     //build delete animal REST API
-    @DeleteMapping("/animal/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<HttpStatus> deleteAnimal(@PathVariable Long id){
         Animal animal = animalRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Animal not exist with id" + id));

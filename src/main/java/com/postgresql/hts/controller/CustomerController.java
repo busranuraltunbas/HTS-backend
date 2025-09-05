@@ -12,48 +12,36 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
-@CrossOrigin("*")
 @RestController
-//@RequestMapping
-public class CustomerController{
+@RequestMapping("/customers") // ✅ tüm endpoint'ler için prefix
+@CrossOrigin("*")
+public class CustomerController {
 
     @Autowired
-    CustomerRepo customerRepo;
+    private CustomerRepo customerRepo;
 
-    //eski
-    @PostMapping("/addCustomer")
-    public void addCustomer(@RequestBody Customer customer){
-        customer.setState(true);
-        customer.setCreatedDate(new Date());
-        customerRepo.save(customer);
-    }
-
-    // build create customer REST API
-    @PostMapping("/createCustomer")
-    public Customer createCustomer(@RequestBody Customer customer){
-        //customer.setState(true);
-        //customer.setCreatedDate(new Date());
+    @PostMapping
+    public Customer createCustomer(@RequestBody Customer customer) {
         return customerRepo.save(customer);
     }
 
-    @GetMapping("/customers")
-    public List<Customer> getAllCustomers(){
+    @GetMapping
+    public List<Customer> getAllCustomers() {
         return customerRepo.findAll();
     }
 
-    //build get customer by id REST API
-    @GetMapping("/customer/{id}")
-    public ResponseEntity<Customer> getCustomerById(@PathVariable Long id){
+    @GetMapping("/{id}")
+    public ResponseEntity<Customer> getCustomerById(@PathVariable Long id) {
         Customer customer = customerRepo.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Customer not exist with id" + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not exist with id: " + id));
         return ResponseEntity.ok(customer);
     }
 
-    //build update customer REST API
-    @PutMapping("/customer/{id}")
-    public ResponseEntity<Customer> updateCustomer(@PathVariable Long id, @RequestBody Customer customerDetails){
-        Customer updateCustomer =  customerRepo.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Customer not exist with id" + id));
+    @PutMapping("/{id}")
+    public ResponseEntity<Customer> updateCustomer(@PathVariable Long id, @RequestBody Customer customerDetails) {
+        Customer updateCustomer = customerRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not exist with id: " + id));
+
         updateCustomer.setFirstName(customerDetails.getFirstName());
         updateCustomer.setLastName(customerDetails.getLastName());
         updateCustomer.setPhone_number(customerDetails.getPhone_number());
@@ -63,13 +51,11 @@ public class CustomerController{
         return ResponseEntity.ok(updateCustomer);
     }
 
-    //build delete customer REST API
-    @DeleteMapping("/customer/{id}")
-    public ResponseEntity<HttpStatus> deleteCustomer(@PathVariable Long id){
+    @DeleteMapping("/{id}")
+    public ResponseEntity<HttpStatus> deleteCustomer(@PathVariable Long id) {
         Customer customer = customerRepo.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Customer not exist with id" + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not exist with id: " + id));
         customerRepo.delete(customer);
-        return  new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
-
 }

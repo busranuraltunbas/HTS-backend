@@ -34,9 +34,9 @@ public class Animal extends BaseEntity{
     private String age;
 
     @Column(name = "IS_SALE")
-    private boolean isSale;
+    private Boolean isSale;
 
-    @Column(name = "PRİCE")
+    @Column(name = "PRICE")
     private BigDecimal price;
 
     @Column(name = "WEIGHT")
