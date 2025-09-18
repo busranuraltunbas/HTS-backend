@@ -2,6 +2,7 @@ package com.postgresql.hts.controller;
 
 import com.postgresql.hts.model.Animal;
 import com.postgresql.hts.model.Customer;
+import com.postgresql.hts.model.BaseEntity;
 import com.postgresql.hts.repository.AnimalRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
@@ -30,7 +31,7 @@ public class AnimalController {
 
     @GetMapping
     public List<Animal> getAllAnimals(){
-        return animalRepo.findAll();
+        return animalRepo.findByIsDeletedFalse();
     }
 
     //build get animal by id REST API
@@ -62,14 +63,31 @@ public class AnimalController {
     }
 
     //build delete animal REST API
-    @DeleteMapping("/{id}")
+    /*@DeleteMapping("/{id}")
     public ResponseEntity<HttpStatus> deleteAnimal(@PathVariable Long id){
         Animal animal = animalRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Animal not exist with id" + id));
         animalRepo.delete(animal);
+        animal.setDeleted(true);
         return  new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }*/
+
+    // ✅ Soft delete
+    @DeleteMapping("/{id}")
+    public String softDeleteAnimal(@PathVariable Long id) {
+        Animal animal = animalRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Animal not found"));
+
+        animal.setDeleted(true); // Soft delete işareti
+        animalRepo.save(animal);
+
+        return "Animal with id " + id + " soft deleted.";
     }
 
-
+    // Silinmiş hayvanlar
+    @GetMapping("/deleted")
+    public List<Animal> getDeletedAnimals() {
+        return animalRepo.findByIsDeletedTrue();
+    }
 
 }

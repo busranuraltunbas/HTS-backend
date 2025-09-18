@@ -2,6 +2,7 @@ package com.postgresql.hts.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.Where;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,8 +27,11 @@ public class Customer  extends BaseEntity{
     @Column(name = "PHONE_NUM")
     private String phone_number;
 
+
     @Column(name = "ADDRESS")
     private String address;
+
+
 
 
     @ManyToOne(cascade = CascadeType.ALL)

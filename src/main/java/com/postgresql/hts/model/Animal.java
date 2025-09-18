@@ -2,6 +2,7 @@ package com.postgresql.hts.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.Where;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -44,6 +45,9 @@ public class Animal extends BaseEntity{
 
     @Column(name = "SHARE")
     private int share;
+
+    /*@Column(name = "IS_DELETED")
+    private boolean isDeleted = false;*/
 
 
     @OneToMany(mappedBy = "animal", cascade = CascadeType.ALL)

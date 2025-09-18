@@ -16,7 +16,7 @@ public class UserController {
 
     @PostMapping("/addUser")
     public void addUser(@RequestBody User user){
-        user.setState(true);
+
         user.setCreatedDate(new Date());
         repo.save(user);
         //user.setCreatedUser(Context.getloginuserName);

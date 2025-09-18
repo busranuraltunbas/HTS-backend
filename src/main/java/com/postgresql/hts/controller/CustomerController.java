@@ -1,5 +1,6 @@
 package com.postgresql.hts.controller;
 
+import com.postgresql.hts.model.Animal;
 import com.postgresql.hts.model.Customer;
 import com.postgresql.hts.repository.CustomerRepo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +14,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/customers") // ✅ tüm endpoint'ler için prefix
+@RequestMapping("/customers")
 @CrossOrigin("*")
 public class CustomerController {
 
@@ -51,11 +52,24 @@ public class CustomerController {
         return ResponseEntity.ok(updateCustomer);
     }
 
-    @DeleteMapping("/{id}")
+    /*@DeleteMapping("/{id}")
     public ResponseEntity<HttpStatus> deleteCustomer(@PathVariable Long id) {
         Customer customer = customerRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not exist with id: " + id));
         customerRepo.delete(customer);
+        customer.setDeleted(true);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }*/
+
+    // ✅ Soft delete
+    @DeleteMapping("/{id}")
+    public String softDeleteAnimal(@PathVariable Long id) {
+        Customer customer = customerRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Customer not found"));
+
+        customer.setDeleted(true); // Soft delete işareti
+        customerRepo.save(customer);
+
+        return "Customer with id " + id + " soft deleted.";
     }
 }
