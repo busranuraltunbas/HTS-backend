@@ -1,6 +1,5 @@
 package com.postgresql.hts.controller;
 
-import com.postgresql.hts.model.Animal;
 import com.postgresql.hts.model.Customer;
 import com.postgresql.hts.repository.CustomerRepo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +27,8 @@ public class CustomerController {
 
     @GetMapping
     public List<Customer> getAllCustomers() {
-        return customerRepo.findAll();
+        //return customerRepo.findAll();
+        return customerRepo.findByIsDeletedFalse();
     }
 
     @GetMapping("/{id}")
@@ -61,9 +61,9 @@ public class CustomerController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }*/
 
-    // ✅ Soft delete
+    // Soft delete
     @DeleteMapping("/{id}")
-    public String softDeleteAnimal(@PathVariable Long id) {
+    public String softDeleteCustomer(@PathVariable Long id) {
         Customer customer = customerRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Customer not found"));
 
@@ -72,4 +72,11 @@ public class CustomerController {
 
         return "Customer with id " + id + " soft deleted.";
     }
+
+    // Silinmiş müşteriler
+    @GetMapping("/deleted")
+    public List<Customer> getDeletedCustomers() {
+        return customerRepo.findByIsDeletedTrue();
+    }
+
 }

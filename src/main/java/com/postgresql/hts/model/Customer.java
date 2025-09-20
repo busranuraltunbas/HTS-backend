@@ -2,7 +2,7 @@ package com.postgresql.hts.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import org.hibernate.annotations.Where;
+
 
 import java.util.ArrayList;
 import java.util.List;
