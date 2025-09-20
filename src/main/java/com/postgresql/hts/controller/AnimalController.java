@@ -72,7 +72,7 @@ public class AnimalController {
         return  new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }*/
 
-    // ✅ Soft delete
+    // Soft delete
     @DeleteMapping("/{id}")
     public String softDeleteAnimal(@PathVariable Long id) {
         Animal animal = animalRepo.findById(id)
