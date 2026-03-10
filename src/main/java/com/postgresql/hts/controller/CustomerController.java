@@ -3,7 +3,6 @@ package com.postgresql.hts.controller;
 import com.postgresql.hts.model.Customer;
 import com.postgresql.hts.repository.CustomerRepo;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,9 +11,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
+
+@CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/customers")
-@CrossOrigin("*")
+
 public class CustomerController {
 
     @Autowired
@@ -32,16 +33,16 @@ public class CustomerController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Customer> getCustomerById(@PathVariable Long id) {
+    public ResponseEntity<Customer> getCustomerById(@PathVariable Long id) throws Exception {
         Customer customer = customerRepo.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Customer not exist with id: " + id));
+                .orElseThrow(() -> new Exception("Customer not exist with id: " + id));
         return ResponseEntity.ok(customer);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Customer> updateCustomer(@PathVariable Long id, @RequestBody Customer customerDetails) {
+    public ResponseEntity<Customer> updateCustomer(@PathVariable Long id, @RequestBody Customer customerDetails) throws Exception {
         Customer updateCustomer = customerRepo.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Customer not exist with id: " + id));
+                .orElseThrow(() -> new Exception("Customer not exist with id: " + id));
 
         updateCustomer.setFirstName(customerDetails.getFirstName());
         updateCustomer.setLastName(customerDetails.getLastName());

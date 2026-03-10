@@ -5,7 +5,6 @@ import com.postgresql.hts.model.Customer;
 import com.postgresql.hts.model.BaseEntity;
 import com.postgresql.hts.repository.AnimalRepo;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -36,17 +35,17 @@ public class AnimalController {
 
     //build get animal by id REST API
     @GetMapping("/{id}")
-    public ResponseEntity<Animal> getAnimalById(@PathVariable Long id){
+    public ResponseEntity<Animal> getAnimalById(@PathVariable Long id) throws Exception {
         Animal animal = animalRepo.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Animal not exist with id" + id));
+                .orElseThrow(() -> new Exception("Animal not exist with id" + id));
         return ResponseEntity.ok(animal);
     }
 
     //build update animal REST API
     @PutMapping("/{id}")
-    public ResponseEntity<Animal> updateAnimal(@PathVariable Long id, @RequestBody Animal animalDetails){
+    public ResponseEntity<Animal> updateAnimal(@PathVariable Long id, @RequestBody Animal animalDetails) throws Exception {
         Animal updateAnimal =  animalRepo.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Animal not exist with id" + id));
+                .orElseThrow(() -> new Exception("Animal not exist with id" + id));
         updateAnimal.setCutNumber(animalDetails.getCutNumber());
         updateAnimal.setAge(animalDetails.getAge());
         updateAnimal.setSalesNumber(animalDetails.getSalesNumber());

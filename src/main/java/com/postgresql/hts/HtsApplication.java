@@ -1,7 +1,5 @@
 package com.postgresql.hts;
 
-import com.postgresql.hts.model.Animal;
-import com.postgresql.hts.model.User;
 import com.postgresql.hts.repository.AnimalRepo;
 import com.postgresql.hts.repository.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
