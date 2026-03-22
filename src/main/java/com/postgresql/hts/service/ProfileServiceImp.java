@@ -6,6 +6,7 @@ import com.postgresql.hts.model.UserEntity;
 import com.postgresql.hts.repository.UserRepo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -28,6 +29,14 @@ public class ProfileServiceImp implements ProfileService{
             return convertToProfileResponce(newProfile);
         }
         throw new ResponseStatusException(HttpStatus.CONFLICT, "Bu e-posta kullanılmış");
+    }
+
+    @Override
+    public ProfileResponse getProfile(String email) {
+        UserEntity existingUser =  userRepo.findByEmail(email)
+                .orElseThrow(()-> new UsernameNotFoundException("User not found: "+ email));
+
+        return convertToProfileResponce(existingUser);
     }
 
     private ProfileResponse convertToProfileResponce(UserEntity newProfile) {

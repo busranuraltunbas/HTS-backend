@@ -4,5 +4,7 @@ import com.postgresql.hts.io.ProfileRequest;
 import com.postgresql.hts.io.ProfileResponse;
 
 public interface ProfileService {
-    public ProfileResponse createProfile(ProfileRequest request);
+     ProfileResponse createProfile(ProfileRequest request);
+
+     ProfileResponse getProfile(String email);
 }
