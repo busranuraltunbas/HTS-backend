@@ -50,6 +50,9 @@ public class UserEntity extends BaseEntity {
     @Column(name = "RESET_VERIFY_OTP_EXPIRED_AT")
     private Long resetVerifyOtpExpireAt;
 
+    @Column(name = "RESET_OTP_EXPIRED_AT")
+    private Long resetOtpExpireAt;
+
     @CreationTimestamp
     @Column(name = "CREATED_AT", updatable = false)
     private Timestamp createdAt;
