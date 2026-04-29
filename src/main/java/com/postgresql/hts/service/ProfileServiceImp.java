@@ -68,6 +68,40 @@ public class ProfileServiceImp implements ProfileService{
         }
     }
 
+    @Override
+    public void resetPassword(String email, String otp, String newPassword) {
+        UserEntity existingUser = userRepo.findByEmail(email).
+                orElseThrow(()-> new UsernameNotFoundException("User not found " + email));
+
+        if (existingUser.getResetOtp() == null || !existingUser.getResetOtp().equals(otp)) {
+            throw new RuntimeException("Invalid OTP");
+        }
+        if (existingUser.getResetOtpExpireAt() < System.currentTimeMillis()) {
+            throw new RuntimeException("OTP Expired");
+        }
+
+        existingUser.setPassword(passwordEncoder.encode(newPassword));
+        existingUser.setResetOtp(null);
+        existingUser.setResetOtpExpireAt(0L);
+
+        userRepo.save(existingUser);
+    }
+
+    @Override
+    public void sendOtp(String userId) {
+
+    }
+
+    @Override
+    public void verifyOtp(String userId, String otp) {
+
+    }
+
+    @Override
+    public String getLoggedInUserId(String email) {
+        return "";
+    }
+
     private ProfileResponse convertToProfileResponce(UserEntity newProfile) {
         return  ProfileResponse.builder()
                 .name(newProfile.getUserName())
@@ -84,7 +118,7 @@ public class ProfileServiceImp implements ProfileService{
                 .userName(request.getName())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .isAccountVerified(false)
-                .resetVerifyOtpExpireAt(0L)
+                .resetOtpExpireAt(0L)
                 .verifyOtp(null)
                 .verifyOtpExpireAt(0L)
                 .resetOtp(null)

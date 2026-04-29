@@ -47,8 +47,6 @@ public class UserEntity extends BaseEntity {
     @Column(name = "RESET_OTP")
     private String resetOtp;
 
-    @Column(name = "RESET_VERIFY_OTP_EXPIRED_AT")
-    private Long resetVerifyOtpExpireAt;
 
     @Column(name = "RESET_OTP_EXPIRED_AT")
     private Long resetOtpExpireAt;
