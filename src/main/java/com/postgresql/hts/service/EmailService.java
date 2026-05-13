@@ -19,7 +19,7 @@ public class EmailService {
         message.setFrom(fromEmail);
         message.setTo(toEmail);
         message.setSubject("Welcome to Our Platform");
-        message.setText("Hello "+name+",\n\nThanks for registering with us!!\n\nRegards, \nAuthfy Team");
+        message.setText("Hello "+name+",\n\nThanks for registering with us!!\n\nRegards, \nHTS Team");
         mailSender.send(message);
 
     }

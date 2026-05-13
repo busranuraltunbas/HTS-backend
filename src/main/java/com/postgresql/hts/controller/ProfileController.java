@@ -11,9 +11,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.CurrentSecurityContext;
 import org.springframework.web.bind.annotation.*;
 
+
 @RestController
-//@RequestMapping("/api/v1.0") (in app.properties)
+@RequestMapping("/api/v1")
+@CrossOrigin("*")
+//@CrossOrigin(origins = "http://localhost:5173")
 @RequiredArgsConstructor
+
 
 public class ProfileController {
     @Autowired
@@ -32,5 +36,6 @@ public class ProfileController {
     public ProfileResponse getProfile(@CurrentSecurityContext(expression = "authentication?.name") String email){
         return  profileService.getProfile(email);
     }
+
 
 }

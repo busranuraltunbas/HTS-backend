@@ -8,7 +8,7 @@ import lombok.Data;
 @AllArgsConstructor
 
 public class ProfileRequest {
-    @NotBlank(message = "Kullnıcı adı boş girilemez")
+    @NotBlank(message = "Kullanıcı adı boş girilemez")
     private String name;
 
     @Email(message = "Geçerli bir e-posta girin")
