@@ -48,7 +48,7 @@ public class SecurityConfig {
                                 "/api/v1/reset-password",
                                 "/api/v1/logout"
                         ).permitAll()
-                        .anyRequest().permitAll()
+                        .anyRequest().authenticated()
                 )
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
