@@ -1,6 +1,5 @@
 package com.postgresql.hts.filter;
 
-import com.postgresql.hts.repository.UserRepo;
 import com.postgresql.hts.service.AppUserDetailsService;
 import com.postgresql.hts.util.JwtUtil;
 import jakarta.servlet.FilterChain;
@@ -12,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.web.authentication.WebAuthenticationDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -30,6 +28,8 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     private static final List<String> PUBLIC_URLS = List.of(
             "/api/v1/login",
             "/api/v1/register",
+            "/api/v1/send-otp",
+            "/api/v1/verify-otp",
             "/api/v1/send-reset-otp",
             "/api/v1/reset-password",
             "/api/v1/logout"
@@ -95,10 +95,10 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                             appUserDetailsService
                                     .loadUserByUsername(email);
 
-                    if (jwtUtil.validateToken(jwt, userDetails)) {
+                    if (userDetails.isEnabled()
+                            && jwtUtil.validateToken(jwt, userDetails)) {
 
-                        UsernamePasswordAuthenticationToken
-                                authenticationToken =
+                        UsernamePasswordAuthenticationToken authenticationToken =
                                 new UsernamePasswordAuthenticationToken(
                                         userDetails,
                                         null,
@@ -112,9 +112,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
                         SecurityContextHolder
                                 .getContext()
-                                .setAuthentication(
-                                        authenticationToken
-                                );
+                                .setAuthentication(authenticationToken);
                     }
                 }
 

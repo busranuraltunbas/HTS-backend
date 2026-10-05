@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 
 import java.sql.Timestamp;
@@ -55,7 +56,7 @@ public class UserEntity extends BaseEntity {
     @Column(name = "CREATED_AT", updatable = false)
     private Timestamp createdAt;
 
-    @CreationTimestamp
+    @UpdateTimestamp
     @Column(name = "UPDATED_AT")
     private Timestamp updatedAt;
 

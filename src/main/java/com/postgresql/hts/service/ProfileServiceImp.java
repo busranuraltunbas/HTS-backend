@@ -2,11 +2,11 @@ package com.postgresql.hts.service;
 
 import com.postgresql.hts.io.ProfileRequest;
 import com.postgresql.hts.io.ProfileResponse;
+import com.postgresql.hts.model.Role;
 import com.postgresql.hts.model.UserEntity;
 import com.postgresql.hts.repository.UserRepo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -17,70 +17,123 @@ import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @RequiredArgsConstructor
-
-public class ProfileServiceImp implements ProfileService{
+public class ProfileServiceImp implements ProfileService {
 
     private final UserRepo userRepo;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
 
     @Override
-    public ProfileResponse createProfile(ProfileRequest request){
-        UserEntity newProfile = convertToUserEntity(request);
-        if(!userRepo.existsByEmail(request.getEmail())){
-            newProfile = userRepo.save(newProfile);
-            return convertToProfileResponce(newProfile);
+    public ProfileResponse createProfile(ProfileRequest request) {
+
+        if (userRepo.existsByEmail(request.getEmail())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Bu e-posta kullanılmış"
+            );
         }
-        throw new ResponseStatusException(HttpStatus.CONFLICT, "Bu e-posta kullanılmış");
+
+        UserEntity newProfile = convertToUserEntity(request);
+        newProfile = userRepo.save(newProfile);
+
+        try {
+            sendOtp(newProfile.getEmail());
+        } catch (Exception e) {
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Doğrulama e-postası gönderilemedi"
+            );
+        }
+
+        return convertToProfileResponse(newProfile);
     }
 
     @Override
     public ProfileResponse getProfile(String email) {
-        UserEntity existingUser =  userRepo.findByEmail(email)
-                .orElseThrow(()-> new UsernameNotFoundException("User not found: "+ email));
 
-        return convertToProfileResponce(existingUser);
+        UserEntity existingUser = userRepo.findByEmail(email)
+                .orElseThrow(() ->
+                        new UsernameNotFoundException(
+                                "User not found: " + email
+                        )
+                );
+
+        return convertToProfileResponse(existingUser);
     }
 
     @Override
     public void sendResetOtp(String email) {
-        UserEntity existingEntity = userRepo.findByEmail(email)
-                .orElseThrow(()-> new UsernameNotFoundException("User not found "+email));
 
-        //Generate 6 digit otp
-        String otp = String.valueOf(ThreadLocalRandom.current().nextInt(100000, 1000000));
+        UserEntity existingUser = userRepo.findByEmail(email)
+                .orElseThrow(() ->
+                        new UsernameNotFoundException(
+                                "User not found: " + email
+                        )
+                );
 
-        //calculate expiry time (current time + 15 minutes in milliseconds)
-        long expiryTime = System.currentTimeMillis() + (15 * 60 * 1000);
+        String otp = String.valueOf(
+                ThreadLocalRandom.current()
+                        .nextInt(100000, 1000000)
+        );
 
-        //update the profile/user
+        long expiryTime =
+                System.currentTimeMillis() + (15 * 60 * 1000);
 
-        existingEntity.setResetOtp(otp);
-        existingEntity.setResetOtpExpireAt(expiryTime);
+        existingUser.setResetOtp(otp);
+        existingUser.setResetOtpExpireAt(expiryTime);
 
-        //set into the database
-        userRepo.save(existingEntity);
+        userRepo.save(existingUser);
 
         try {
-            emailService.sendResetOtpEmail(existingEntity.getEmail(), otp);
-        } catch (Exception ex){
-            throw new RuntimeException("Unable to send email");
+            emailService.sendResetOtpEmail(
+                    existingUser.getEmail(),
+                    otp
+            );
+        } catch (Exception e) {
+            throw new RuntimeException(
+                    "Unable to send reset email",
+                    e
+            );
         }
     }
 
     @Override
-    public void resetPassword(String email, String otp, String newPassword) {
-        UserEntity existingUser = userRepo.findByEmail(email).
-                orElseThrow(()-> new UsernameNotFoundException("User not found " + email));
+    public void resetPassword(
+            String email,
+            String otp,
+            String newPassword
+    ) {
 
-        if (existingUser.getResetOtp() == null || !existingUser.getResetOtp().equals(otp)) {
-            throw new RuntimeException("Invalid OTP");
-        }
-        if (existingUser.getResetOtpExpireAt() < System.currentTimeMillis()) {
-            throw new RuntimeException("OTP Expired");
+        UserEntity existingUser = userRepo.findByEmail(email)
+                .orElseThrow(() ->
+                        new UsernameNotFoundException(
+                                "User not found: " + email
+                        )
+                );
+
+        if (existingUser.getResetOtp() == null ||
+                !existingUser.getResetOtp().equals(otp)) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Geçersiz OTP"
+            );
         }
 
-        existingUser.setPassword(passwordEncoder.encode(newPassword));
+        if (existingUser.getResetOtpExpireAt() == null ||
+                existingUser.getResetOtpExpireAt() <
+                        System.currentTimeMillis()) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "OTP'nin süresi dolmuş"
+            );
+        }
+
+        existingUser.setPassword(
+                passwordEncoder.encode(newPassword)
+        );
+
         existingUser.setResetOtp(null);
         existingUser.setResetOtpExpireAt(0L);
 
@@ -89,43 +142,73 @@ public class ProfileServiceImp implements ProfileService{
 
     @Override
     public void sendOtp(String email) {
+
         UserEntity existingUser = userRepo.findByEmail(email)
-                .orElseThrow(()-> new UsernameNotFoundException("User not found: "+ email));
-        if (existingUser.getIsAccountVerified() != null && existingUser.getIsAccountVerified()) {
+                .orElseThrow(() ->
+                        new UsernameNotFoundException(
+                                "User not found: " + email
+                        )
+                );
+
+        if (Boolean.TRUE.equals(
+                existingUser.getIsAccountVerified()
+        )) {
             return;
         }
 
-        //Generate 6 digit OTP
-        String otp = String.valueOf(ThreadLocalRandom.current().nextInt(100000, 1000000));
+        String otp = String.valueOf(
+                ThreadLocalRandom.current()
+                        .nextInt(100000, 1000000)
+        );
 
-        //calculate expiry time (current time + 24 hours in milliseconds)
-        long expiryTime = System.currentTimeMillis() + (24 * 60 * 60 * 1000);
+        long expiryTime =
+                System.currentTimeMillis() + (15 * 60 * 1000);
 
-        //Update the user entity
         existingUser.setVerifyOtp(otp);
         existingUser.setVerifyOtpExpireAt(expiryTime);
 
-        //save to the database
         userRepo.save(existingUser);
 
         try {
-            emailService.sendOtpEmail(existingUser.getEmail(), otp);
-        }catch (Exception e) {
-            throw new RuntimeException("Unable to send email");
+            emailService.sendOtpEmail(
+                    existingUser.getEmail(),
+                    otp
+            );
+        } catch (Exception e) {
+            throw new RuntimeException(
+                    "Unable to send verification email",
+                    e
+            );
         }
     }
 
     @Override
     public void verifyOtp(String email, String otp) {
-        UserEntity existingUser =userRepo.findByEmail(email)
-                .orElseThrow(()-> new UsernameNotFoundException("User not found: " + email));
 
-        if (existingUser.getVerifyOtp() == null || !existingUser.getVerifyOtp().equals(otp)) {
-            throw new RuntimeException("Invalid OTP");
+        UserEntity existingUser = userRepo.findByEmail(email)
+                .orElseThrow(() ->
+                        new UsernameNotFoundException(
+                                "User not found: " + email
+                        )
+                );
+
+        if (existingUser.getVerifyOtp() == null ||
+                !existingUser.getVerifyOtp().equals(otp)) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Geçersiz OTP"
+            );
         }
 
-        if (existingUser.getVerifyOtpExpireAt() < System.currentTimeMillis()) {
-            throw new RuntimeException("OTP Expired");
+        if (existingUser.getVerifyOtpExpireAt() == null ||
+                existingUser.getVerifyOtpExpireAt() <
+                        System.currentTimeMillis()) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "OTP'nin süresi dolmuş"
+            );
         }
 
         existingUser.setIsAccountVerified(true);
@@ -135,28 +218,37 @@ public class ProfileServiceImp implements ProfileService{
         userRepo.save(existingUser);
     }
 
-    private ProfileResponse convertToProfileResponce(UserEntity newProfile) {
-        return  ProfileResponse.builder()
-                .name(newProfile.getUserName())
-                .email(newProfile.getEmail())
-                .userId(newProfile.getUserId())
-                .isAccountVerified(newProfile.getIsAccountVerified())
+    private ProfileResponse convertToProfileResponse(
+            UserEntity user
+    ) {
+
+        return ProfileResponse.builder()
+                .name(user.getUserName())
+                .email(user.getEmail())
+                .userId(user.getUserId())
+                .isAccountVerified(user.getIsAccountVerified())
                 .build();
     }
 
-    private UserEntity convertToUserEntity(ProfileRequest request) {
+    private UserEntity convertToUserEntity(
+            ProfileRequest request
+    ) {
+
         return UserEntity.builder()
                 .email(request.getEmail())
                 .userId(UUID.randomUUID().toString())
                 .userName(request.getName())
-                .password(passwordEncoder.encode(request.getPassword()))
+                .password(
+                        passwordEncoder.encode(
+                                request.getPassword()
+                        )
+                )
+                .role(Role.USER)
                 .isAccountVerified(false)
                 .resetOtpExpireAt(0L)
                 .verifyOtp(null)
                 .verifyOtpExpireAt(0L)
                 .resetOtp(null)
                 .build();
-
-
     }
 }

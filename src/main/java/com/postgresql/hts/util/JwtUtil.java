@@ -19,8 +19,8 @@ public class JwtUtil {
     private String SECRET_KEY;
 
     public String generateToken(UserDetails userDetails){
-        Map<String, Object> cliams = new HashMap<>();
-        return createToken(cliams, userDetails.getUsername());
+        Map<String, Object> claims  = new HashMap<>();
+        return createToken(claims, userDetails.getUsername());
     }
 
     private String createToken(Map<String, Object> cliams, String email) {

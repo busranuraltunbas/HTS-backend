@@ -9,7 +9,6 @@ import com.postgresql.hts.util.JwtUtil;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -40,35 +39,87 @@ public class AuthController {
     private final ProfileService profileService;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody AuthRequest request){
+    public ResponseEntity<?> login(@RequestBody AuthRequest request) {
 
         try {
-             authenticate(request.getEmail(), request.getPassword());
-             final UserDetails userDetails  = appUserDetailsService.loadUserByUsername(request.getEmail());
-             final String jwtToken = jwtUtil.generateToken(userDetails);
-            ResponseCookie cookie = ResponseCookie.from("jwt", jwtToken)
+
+            authenticate(
+                    request.getEmail(),
+                    request.getPassword()
+            );
+
+            final UserDetails userDetails =
+                    appUserDetailsService.loadUserByUsername(
+                            request.getEmail()
+                    );
+
+            // JWT oluştur
+            final String jwtToken =
+                    jwtUtil.generateToken(userDetails);
+
+            ResponseCookie cookie = ResponseCookie.from(
+                            "jwt",
+                            jwtToken
+                    )
                     .httpOnly(true)
                     .path("/")
-                    .maxAge(Duration.ofDays(1))
+                    .maxAge(Duration.ofHours(10))
                     .sameSite("Strict")
                     .build();
-            return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie.toString())
-                    .body(new AuthResponse(request.getEmail(), jwtToken));
-        } catch(BadCredentialsException ex){
+
+            return ResponseEntity.ok()
+                    .header(
+                            HttpHeaders.SET_COOKIE,
+                            cookie.toString()
+                    )
+                    .body(
+                            new AuthResponse(
+                                    request.getEmail(),
+                                    jwtToken
+                            )
+                    );
+
+        } catch (BadCredentialsException ex) {
+
             Map<String, Object> error = new HashMap<>();
+
             error.put("error", true);
-            error.put("message", "E-posta yada parola hatalı");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
-        } catch(DisabledException ex){
+            error.put(
+                    "message",
+                    "E-posta veya parola hatalı"
+            );
+
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(error);
+
+        } catch (DisabledException ex) {
+
             Map<String, Object> error = new HashMap<>();
+
             error.put("error", true);
-            error.put("message", "Kullanıcı hesabı devre dışı");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
-        } catch(Exception ex){
+            error.put(
+                    "message",
+                    "Hesabınız henüz doğrulanmamış."
+            );
+
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body(error);
+
+        } catch (Exception ex) {
+
             Map<String, Object> error = new HashMap<>();
+
             error.put("error", true);
-            error.put("message", "Kullanıcı hesabı hatalı");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+            error.put(
+                    "message",
+                    "Kullanıcı hesabı hatalı."
+            );
+
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(error);
         }
     }
 
@@ -109,18 +160,24 @@ public class AuthController {
     }
 
     @PostMapping("/verify-otp")
-    public void verifyEmail(@RequestBody Map<String, Object> request,
-                            @CurrentSecurityContext(expression = "authentication?.name") String email){
-        if (request.get("otp").toString() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing details");
+    public void verifyEmail(
+            @RequestBody Map<String, Object> request
+    ) {
+
+        Object emailObject = request.get("email");
+        Object otpObject = request.get("otp");
+
+        if (emailObject == null || otpObject == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Email ve OTP gereklidir"
+            );
         }
 
-        try {
-            profileService.verifyOtp(email, request.get("otp").toString());
-        }catch (Exception e){
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
-        }
-
+        profileService.verifyOtp(
+                emailObject.toString(),
+                otpObject.toString()
+        );
     }
 
     @PostMapping("/logout")
