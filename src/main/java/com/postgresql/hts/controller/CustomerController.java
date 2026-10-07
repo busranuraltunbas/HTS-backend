@@ -2,47 +2,70 @@ package com.postgresql.hts.controller;
 
 import com.postgresql.hts.model.Customer;
 import com.postgresql.hts.repository.CustomerRepo;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
-
-@CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/customers")
-
+@RequiredArgsConstructor
 public class CustomerController {
 
-    @Autowired
-    private CustomerRepo customerRepo;
+    private final CustomerRepo customerRepo;
 
+    // SADECE ADMIN
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public Customer createCustomer(@RequestBody Customer customer) {
         return customerRepo.save(customer);
     }
 
+    // USER + ADMIN
     @GetMapping
     public List<Customer> getAllCustomers() {
-        //return customerRepo.findAll();
         return customerRepo.findByIsDeletedFalse();
     }
 
+    // SADECE ADMIN
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/deleted")
+    public List<Customer> getDeletedCustomers() {
+        return customerRepo.findByIsDeletedTrue();
+    }
+
+    // USER + ADMIN
     @GetMapping("/{id}")
-    public ResponseEntity<Customer> getCustomerById(@PathVariable Long id) throws Exception {
+    public ResponseEntity<Customer> getCustomerById(
+            @PathVariable Long id
+    ) {
         Customer customer = customerRepo.findById(id)
-                .orElseThrow(() -> new Exception("Customer not exist with id: " + id));
+                .filter(c -> !c.isDeleted())
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Customer not found with id " + id
+                        )
+                );
+
         return ResponseEntity.ok(customer);
     }
 
+    // SADECE ADMIN
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
-    public ResponseEntity<Customer> updateCustomer(@PathVariable Long id, @RequestBody Customer customerDetails) throws Exception {
+    public ResponseEntity<Customer> updateCustomer(
+            @PathVariable Long id,
+            @RequestBody Customer customerDetails
+    ) {
         Customer updateCustomer = customerRepo.findById(id)
-                .orElseThrow(() -> new Exception("Customer not exist with id: " + id));
+                .filter(c -> !c.isDeleted())
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Customer not found with id " + id
+                        )
+                );
 
         updateCustomer.setFirstName(customerDetails.getFirstName());
         updateCustomer.setLastName(customerDetails.getLastName());
@@ -50,34 +73,29 @@ public class CustomerController {
         updateCustomer.setAddress(customerDetails.getAddress());
 
         customerRepo.save(updateCustomer);
+
         return ResponseEntity.ok(updateCustomer);
     }
 
-    /*@DeleteMapping("/{id}")
-    public ResponseEntity<HttpStatus> deleteCustomer(@PathVariable Long id) {
-        Customer customer = customerRepo.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Customer not exist with id: " + id));
-        customerRepo.delete(customer);
-        customer.setDeleted(true);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-    }*/
-
-    // Soft delete
+    // SADECE ADMIN
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
-    public String softDeleteCustomer(@PathVariable Long id) {
+    public ResponseEntity<String> softDeleteCustomer(
+            @PathVariable Long id
+    ) {
         Customer customer = customerRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Customer not found"));
+                .filter(c -> !c.isDeleted())
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Customer not found with id " + id
+                        )
+                );
 
-        customer.setDeleted(true); // Soft delete işareti
+        customer.setDeleted(true);
         customerRepo.save(customer);
 
-        return "Customer with id " + id + " soft deleted.";
+        return ResponseEntity.ok(
+                "Customer with id " + id + " soft deleted."
+        );
     }
-
-    // Silinmiş müşteriler
-    @GetMapping("/deleted")
-    public List<Customer> getDeletedCustomers() {
-        return customerRepo.findByIsDeletedTrue();
-    }
-
 }

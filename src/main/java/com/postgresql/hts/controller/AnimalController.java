@@ -1,92 +1,106 @@
 package com.postgresql.hts.controller;
 
 import com.postgresql.hts.model.Animal;
-import com.postgresql.hts.model.Customer;
-import com.postgresql.hts.model.BaseEntity;
 import com.postgresql.hts.repository.AnimalRepo;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/animals")
-@CrossOrigin("*")
+@RequiredArgsConstructor
 public class AnimalController {
-    @Autowired
-    private  AnimalRepo animalRepo;
 
-    // build create animal REST API
+    private final AnimalRepo animalRepo;
+
+    // SADECE ADMIN
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public Animal createAnimal(@RequestBody Animal animal){
-        //animal.setState(true);
-        //animal.setCreatedDate(new Date());
+    public Animal createAnimal(@RequestBody Animal animal) {
         return animalRepo.save(animal);
     }
 
+    // USER + ADMIN
     @GetMapping
-    public List<Animal> getAllAnimals(){
+    public List<Animal> getAllAnimals() {
         return animalRepo.findByIsDeletedFalse();
     }
 
-    //build get animal by id REST API
+    // SADECE ADMIN
+    @GetMapping("/deleted")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<Animal> getDeletedAnimals() {
+        return animalRepo.findByIsDeletedTrue();
+    }
+
+    // USER + ADMIN
     @GetMapping("/{id}")
-    public ResponseEntity<Animal> getAnimalById(@PathVariable Long id) throws Exception {
+    public ResponseEntity<Animal> getAnimalById(
+            @PathVariable Long id
+    ) {
         Animal animal = animalRepo.findById(id)
-                .orElseThrow(() -> new Exception("Animal not exist with id" + id));
+                .filter(a -> !a.isDeleted())
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Animal not found with id " + id
+                        )
+                );
+
         return ResponseEntity.ok(animal);
     }
 
-    //build update animal REST API
+    // SADECE ADMIN
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
-    public ResponseEntity<Animal> updateAnimal(@PathVariable Long id, @RequestBody Animal animalDetails) throws Exception {
-        Animal updateAnimal =  animalRepo.findById(id)
-                .orElseThrow(() -> new Exception("Animal not exist with id" + id));
+    public ResponseEntity<Animal> updateAnimal(
+            @PathVariable Long id,
+            @RequestBody Animal animalDetails
+    ) {
+        Animal updateAnimal = animalRepo.findById(id)
+                .filter(a -> !a.isDeleted())
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Animal not found with id " + id
+                        )
+                );
+
         updateAnimal.setCutNumber(animalDetails.getCutNumber());
         updateAnimal.setAge(animalDetails.getAge());
         updateAnimal.setSalesNumber(animalDetails.getSalesNumber());
         updateAnimal.setEarningNumber(animalDetails.getEarningNumber());
         updateAnimal.setPrice(animalDetails.getPrice());
-
         updateAnimal.setType(animalDetails.getType());
         updateAnimal.setWeight(animalDetails.getWeight());
         updateAnimal.setShare(animalDetails.getShare());
-        updateAnimal.setIsSale(animalDetails.getIsSale()); // boolean field
+        updateAnimal.setIsSale(animalDetails.getIsSale());
 
         animalRepo.save(updateAnimal);
+
         return ResponseEntity.ok(updateAnimal);
     }
 
-    //build delete animal REST API
-    /*@DeleteMapping("/{id}")
-    public ResponseEntity<HttpStatus> deleteAnimal(@PathVariable Long id){
-        Animal animal = animalRepo.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Animal not exist with id" + id));
-        animalRepo.delete(animal);
-        animal.setDeleted(true);
-        return  new ResponseEntity<>(HttpStatus.NO_CONTENT);
-    }*/
-
-    // Soft delete
+    // SADECE ADMIN
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
-    public String softDeleteAnimal(@PathVariable Long id) {
+    public ResponseEntity<String> softDeleteAnimal(
+            @PathVariable Long id
+    ) {
         Animal animal = animalRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Animal not found"));
+                .filter(a -> !a.isDeleted())
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Animal not found with id " + id
+                        )
+                );
 
-        animal.setDeleted(true); // Soft delete işareti
+        animal.setDeleted(true);
         animalRepo.save(animal);
 
-        return "Animal with id " + id + " soft deleted.";
+        return ResponseEntity.ok(
+                "Animal with id " + id + " soft deleted."
+        );
     }
-
-    // Silinmiş hayvanlar
-    @GetMapping("/deleted")
-    public List<Animal> getDeletedAnimals() {
-        return animalRepo.findByIsDeletedTrue();
-    }
-
 }

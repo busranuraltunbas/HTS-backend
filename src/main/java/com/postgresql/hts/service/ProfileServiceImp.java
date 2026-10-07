@@ -218,15 +218,18 @@ public class ProfileServiceImp implements ProfileService {
         userRepo.save(existingUser);
     }
 
-    private ProfileResponse convertToProfileResponse(
-            UserEntity user
-    ) {
+    private ProfileResponse convertToProfileResponse(UserEntity user) {
 
         return ProfileResponse.builder()
                 .name(user.getUserName())
                 .email(user.getEmail())
                 .userId(user.getUserId())
                 .isAccountVerified(user.getIsAccountVerified())
+                .role(
+                        user.getRole() != null
+                                ? user.getRole().name()
+                                : "USER"
+                )
                 .build();
     }
 
