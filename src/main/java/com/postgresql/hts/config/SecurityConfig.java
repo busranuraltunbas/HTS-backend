@@ -20,6 +20,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.List;
 
@@ -73,10 +74,15 @@ public class SecurityConfig {
                         UsernamePasswordAuthenticationFilter.class
                 )
 
-                .exceptionHandling(ex ->
-                        ex.authenticationEntryPoint(
-                                customAuthenticationEntryPoint
-                        )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(customAuthenticationEntryPoint)
+                        .accessDeniedHandler((request, response, exception) -> {
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.getWriter().write(
+                                    "{\"error\":\"Forbidden\",\"message\":\"Bu işlem için ADMIN yetkisi gerekiyor.\"}"
+                            );
+                        })
                 );
 
         return http.build();

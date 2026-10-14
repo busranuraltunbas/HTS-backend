@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -17,9 +18,9 @@ public class CustomerController {
     private final CustomerRepo customerRepo;
 
     // SADECE ADMIN
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public Customer createCustomer(@RequestBody Customer customer) {
+    @PreAuthorize("hasRole('ADMIN')")
+    public Customer createCustomer(@Valid @RequestBody Customer customer) {
         return customerRepo.save(customer);
     }
 
@@ -97,5 +98,24 @@ public class CustomerController {
         return ResponseEntity.ok(
                 "Customer with id " + id + " soft deleted."
         );
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/{id}/restore")
+    public ResponseEntity<Customer> restoreCustomer(@PathVariable Long id) {
+
+        Customer customer = customerRepo.findById(id)
+                .filter(Customer::isDeleted)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Silinmiş müşteri bulunamadı. ID: " + id
+                        )
+                );
+
+        customer.setDeleted(false);
+
+        Customer restoredCustomer = customerRepo.save(customer);
+
+        return ResponseEntity.ok(restoredCustomer);
     }
 }

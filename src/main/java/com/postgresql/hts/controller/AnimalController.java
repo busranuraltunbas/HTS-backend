@@ -103,4 +103,24 @@ public class AnimalController {
                 "Animal with id " + id + " soft deleted."
         );
     }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/{id}/restore")
+    public ResponseEntity<Animal> restoreAnimal(
+            @PathVariable Long id) {
+
+        Animal animal = animalRepo.findById(id)
+                .filter(Animal::isDeleted)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Silinmiş hayvan bulunamadı. ID: " + id
+                        )
+                );
+
+        animal.setDeleted(false);
+
+        Animal restoredAnimal = animalRepo.save(animal);
+
+        return ResponseEntity.ok(restoredAnimal);
+    }
 }
